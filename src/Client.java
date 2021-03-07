@@ -19,10 +19,12 @@ public class Client {
             byte[] bytes = new byte[2048];
             FileOutputStream out = new FileOutputStream(savedPath);
             BufferedOutputStream buffOut = new BufferedOutputStream(out);
-
-            while(sockInput.read(bytes) > 0){
-
+            int len;
+            while((len = sockInput.read(bytes)) > 0){
+                buffOut.write(bytes,0, len);
             }
+            buffOut.close();
+            sockInput.close();
         }catch (Exception e){
             e.printStackTrace();
         }
