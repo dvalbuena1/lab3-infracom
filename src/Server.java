@@ -124,14 +124,16 @@ public class Server {
         public void run() {
             System.out.println("Start Thread " + id);
             OutputStream os = null;
+            DataOutputStream dataOs = null;
             try {
                 os = client.getOutputStream();
+                dataOs = new DataOutputStream(os);
 
-                os.write(id);
-                os.flush();
-                DataOutputStream dos = new DataOutputStream(os);
-                dos.writeLong(sizeFile);
-                dos.flush();
+                dataOs.writeInt(id);
+                dataOs.flush();
+
+                dataOs.writeLong(sizeFile);
+                dataOs.flush();
 
                 synchronized (monitor) {
                     monitor.wait();
@@ -146,12 +148,13 @@ public class Server {
                 }
 
                 os.write(hashFile);
-
+                os.flush();
                 System.out.println("End Thread " + id);
             } catch (IOException | InterruptedException e) {
             } finally {
                 try {
                     if (os != null) os.close();
+                    if (dataOs != null) dataOs.close();
                     client.close();
                 } catch (IOException e) {
 

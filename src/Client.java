@@ -29,22 +29,20 @@ public class Client {
         return digest.digest();
     }
 
-    public static void notifyServer(PrintWriter pw) {
+    public static void main(String[] args) throws IOException {
+        Socket socket = null;
+        InputStream sockInput = null;
+        DataInputStream dis = null;
 
-    }
-
-    public static void main(String[] args) {
-        int bytesRead;
-        String savedPath = "Cliente";
         try {
-            Socket socket = new Socket(serverIP, port);
-            InputStream sockInput = socket.getInputStream();
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            socket = new Socket(serverIP, port);
+            sockInput = socket.getInputStream();
+            dis = new DataInputStream(sockInput);
 
-            int id = sockInput.read();
-            DataInputStream dis = new DataInputStream(sockInput);
+            int id = dis.readInt();
             long fileSize = dis.readLong();
             System.out.println(fileSize);
+
             byte[] localHash = readFileSocket(sockInput, id, fileSize);
 
             byte[] hash = new byte[32];
@@ -55,19 +53,15 @@ public class Client {
             }
             else
                 System.out.println("Se logrooooo!!!!! UwU");
-            //int id = 0;
-            //
-            //readFileSocket(sockInput, id);
 
-//            byte[] hash = new byte[32];
-//            int bytesHash = sockInput.read(hash);
-//
-//            if (bytesHash != 32)
-//                throw new Exception("Bytes were not read completely");
 
-            sockInput.close();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        finally {
+            if (sockInput != null) sockInput.close();
+            if (dis != null) dis.close();
+            if (socket != null) socket.close();
         }
     }
 }
