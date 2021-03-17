@@ -13,18 +13,20 @@ public class Client {
         return Arrays.equals(hash1, hash2);
     }
 
-    public static void readFileSocket(InputStream sockInput, int id) throws Exception {
+    public static byte[] readFileSocket(InputStream sockInput, int id, long fileSize) throws Exception {
         byte[] bytes = new byte[4096];
         FileOutputStream out = new FileOutputStream(filePath + id + ".txt");
         BufferedOutputStream buffOut = new BufferedOutputStream(out);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
         int len;
-        while ((len = sockInput.read(bytes)) != -1) {
+        while (fileSize > 0 && (len = sockInput.read(bytes)) != -1) {
             buffOut.write(bytes, 0, len);
             digest.update(bytes, 0, len);
+            fileSize -= len;
         }
         buffOut.close();
+        return digest.digest();
     }
 
     public static void notifyServer(PrintWriter pw) {
@@ -40,13 +42,15 @@ public class Client {
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
             int id = sockInput.read();
+            long fileSize = sockInput.read();
+            byte[] localHash = readFileSocket(sockInput, id, fileSize);
 
-            readFileSocket(sockInput, id);
-
-            sockInput.read();
             byte[] hash = new byte[32];
             sockInput.read(hash);
-
+            boolean check = checkHash(hash, localHash);
+            if(!check){
+                System.out.println("Archivo Corrupto!!!!! UwU");
+            }
             //int id = 0;
             //
             //readFileSocket(sockInput, id);

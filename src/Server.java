@@ -9,15 +9,15 @@ import java.util.logging.Logger;
 public class Server {
     private static int port = 6969;
     private static Logger logger = Logger.getLogger("MyLogger");
-    private static int cantClients = 1;
-    private static boolean isFirstFile = true;
+    private static int cantClients;
     private static MailBox mb;
     private static Object monitor;
-    private static String PATH_FILE1 = "./data/prueba1.txt";
-    private static String PATH_FILE2 = "./data/prueba2.txt";
+    private static String PATH_FILE;
     private static LinkedList<ThreadClient> sockets = new LinkedList<ThreadClient>();
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+        PATH_FILE = args[0];
+        cantClients = Integer.parseInt(args[1]);
         MailBox mb = new MailBox();
         Server.mb = mb;
         monitor = new Object();
@@ -36,17 +36,14 @@ public class Server {
     }
 
     private static void serveClients() throws IOException, NoSuchAlgorithmException {
+        File file = new File(PATH_FILE);
+        int fileSize = (int) file.length();
+        ThreadClient.setSizeFile(fileSize);
+
         int size = sockets.size();
         for (int i = 0; i < size; i++)
             sockets.poll().start();
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-
-        File file;
-        if (isFirstFile) {
-            file = new File(PATH_FILE1);
-        } else {
-            file = new File(PATH_FILE2);
-        }
 
         byte[] byteFile = new byte[4096];
         BufferedInputStream bf = new BufferedInputStream(new FileInputStream(file));
@@ -114,6 +111,7 @@ public class Server {
         private static byte[] hashFile;
         private static Object monitor;
         private static MailBox mb;
+        private static int sizeFile;
         private final int id;
         private final Socket client;
 
@@ -132,6 +130,9 @@ public class Server {
                 os.write(id);
                 os.flush();
 
+                os.write(sizeFile);
+                os.flush();
+
                 synchronized (monitor) {
                     monitor.wait();
                 }
@@ -144,7 +145,6 @@ public class Server {
                     }
                 }
 
-                os.write(0);
                 os.write(hashFile);
 
                 System.out.println("End Thread " + id);
@@ -169,6 +169,10 @@ public class Server {
 
         public static void setMonitor(Object monitor) {
             ThreadClient.monitor = monitor;
+        }
+
+        public static void setSizeFile(int sizeFile) {
+            ThreadClient.sizeFile = sizeFile;
         }
     }
 }
