@@ -111,7 +111,7 @@ public class Server {
         private static byte[] hashFile;
         private static Object monitor;
         private static MailBox mb;
-        private static int sizeFile;
+        private static long sizeFile;
         private final int id;
         private final Socket client;
 
@@ -129,9 +129,9 @@ public class Server {
 
                 os.write(id);
                 os.flush();
-
-                os.write(sizeFile);
-                os.flush();
+                DataOutputStream dos = new DataOutputStream(os);
+                dos.writeLong(sizeFile);
+                dos.flush();
 
                 synchronized (monitor) {
                     monitor.wait();

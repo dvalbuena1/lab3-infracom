@@ -20,7 +20,7 @@ public class Client {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
         int len;
-        while (fileSize > 0 && (len = sockInput.read(bytes)) != -1) {
+        while (fileSize > 0 && (len = sockInput.read(bytes,0, bytes.length)) != -1) {
             buffOut.write(bytes, 0, len);
             digest.update(bytes, 0, len);
             fileSize -= len;
@@ -42,7 +42,9 @@ public class Client {
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
             int id = sockInput.read();
-            long fileSize = sockInput.read();
+            DataInputStream dis = new DataInputStream(sockInput);
+            long fileSize = dis.readLong();
+            System.out.println(fileSize);
             byte[] localHash = readFileSocket(sockInput, id, fileSize);
 
             byte[] hash = new byte[32];
@@ -51,6 +53,8 @@ public class Client {
             if(!check){
                 System.out.println("Archivo Corrupto!!!!! UwU");
             }
+            else
+                System.out.println("Se logrooooo!!!!! UwU");
             //int id = 0;
             //
             //readFileSocket(sockInput, id);
