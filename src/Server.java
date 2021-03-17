@@ -9,8 +9,8 @@ import java.util.logging.Logger;
 public class Server {
     private static int port = 6969;
     private static Logger logger = Logger.getLogger("MyLogger");
-    private static int cantClients = 2;
-    private static boolean isFirstFile = false;
+    private static int cantClients = 1;
+    private static boolean isFirstFile = true;
     private static MailBox mb;
     private static Object monitor;
     private static String PATH_FILE1 = "./data/prueba1.txt";
@@ -27,6 +27,7 @@ public class Server {
 
         while (true) {
             Socket sc = sv.accept();
+            System.out.println("Acepto un cliente");
             sockets.add(new ThreadClient(sc, sockets.size() + 1));
 
             if (sockets.size() == cantClients)
@@ -47,17 +48,15 @@ public class Server {
             file = new File(PATH_FILE2);
         }
 
-        byte[] byteFile = new byte[2048];
+        byte[] byteFile = new byte[4096];
         BufferedInputStream bf = new BufferedInputStream(new FileInputStream(file));
 
         int count;
         while ((count = bf.read(byteFile)) != -1) {
-            System.out.println("Data Sent : " + count);
             digest.update(byteFile, 0, count);
             mb.setChunk(byteFile);
             synchronized (monitor) {
                 monitor.notifyAll();
-                System.out.println("Realizo Notify1");
             }
             while (mb.getCount() != cantClients) {
                 Thread.yield();
@@ -66,12 +65,11 @@ public class Server {
         }
 
         mb.setFinished(true);
+        byte[] hashFile = digest.digest();
+        ThreadClient.setHashFile(hashFile);
         synchronized (monitor) {
             monitor.notifyAll();
-            System.out.println("Realizo Notify2");
         }
-
-        byte[] hashFile = digest.digest();
 
         bf.close();
     }
@@ -84,15 +82,6 @@ public class Server {
 
         synchronized public boolean getFinished() {
             return finished;
-        }
-
-        synchronized public boolean getCan() {
-            return can;
-        }
-
-        synchronized public void setCan(Boolean res) {
-            System.out.println("CAN = " + res);
-            can = res;
         }
 
         synchronized public void setFinished(Boolean res) {
@@ -124,8 +113,8 @@ public class Server {
 
         private static byte[] hashFile;
         private static Object monitor;
-        private final int id;
         private static MailBox mb;
+        private final int id;
         private final Socket client;
 
         public ThreadClient(Socket client, int id) {
@@ -135,7 +124,7 @@ public class Server {
 
         @Override
         public void run() {
-            System.out.println("Start Thread");
+            System.out.println("Start Thread " + id);
             OutputStream os = null;
             try {
                 os = client.getOutputStream();
@@ -144,22 +133,21 @@ public class Server {
                 os.flush();
 
                 synchronized (monitor) {
-                    System.out.println("Entro del wait1");
                     monitor.wait();
-                    System.out.println("Salio del wait1");
                 }
                 while (!mb.getFinished()) {
                     synchronized (monitor) {
                         os.write(mb.getChunk(), 0, mb.getChunk().length);
                         os.flush();
                         mb.addCount();
-                        System.out.println("Entro del wait2");
                         monitor.wait();
-                        System.out.println("Salio del wait2");
                     }
                 }
 
-                System.out.println("End Thread");
+                os.write(0);
+                os.write(hashFile);
+
+                System.out.println("End Thread " + id);
             } catch (IOException | InterruptedException e) {
             } finally {
                 try {

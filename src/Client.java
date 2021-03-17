@@ -6,7 +6,7 @@ import java.util.Arrays;
 public class Client {
 
     private static String filePath = "";
-    private static String serverIP = "";
+    private static String serverIP = "";//"192.168.0.18";
     private static int port = 6969;
 
     public static boolean checkHash(byte[] hash1, byte[] hash2) {
@@ -14,7 +14,7 @@ public class Client {
     }
 
     public static void readFileSocket(InputStream sockInput, int id) throws Exception {
-        byte[] bytes = new byte[2048];
+        byte[] bytes = new byte[4096];
         FileOutputStream out = new FileOutputStream(filePath + id + ".txt");
         BufferedOutputStream buffOut = new BufferedOutputStream(out);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -42,6 +42,10 @@ public class Client {
             int id = sockInput.read();
 
             readFileSocket(sockInput, id);
+
+            sockInput.read();
+            byte[] hash = new byte[32];
+            sockInput.read(hash);
 
             //int id = 0;
             //
