@@ -33,7 +33,7 @@ public class Server {
         LogManager.getLogManager().reset();
         LocalDateTime currantTime = LocalDateTime.now();
         String parsedTime = DATE_TIME_FORMATTER.format(currantTime);
-        FileHandler fileHandler = new FileHandler(parsedTime+".log");
+        FileHandler fileHandler = new FileHandler("./Logs/" + parsedTime + ".log");
         fileHandler.setFormatter(new SimpleFormatter());
         fileHandler.setLevel(Level.ALL);
         logger.addHandler(fileHandler);
@@ -42,7 +42,7 @@ public class Server {
             Socket sc = sv.accept();
             DataInputStream in = new DataInputStream(sc.getInputStream());
             String confirmation = in.readUTF();
-            if(confirmation.equals("ACK Ready")) {
+            if (confirmation.equals("ACK Ready")) {
                 System.out.println("Acepto un cliente");
                 sockets.add(new ThreadClient(sc, sockets.size() + 1));
 
@@ -55,10 +55,10 @@ public class Server {
     private static void serveClients() throws IOException, NoSuchAlgorithmException {
         File file = new File(PATH_FILE);
         // Log
-        logger.info(PATH_FILE);
+        logger.info("File name: " + file.getName());
         int fileSize = (int) file.length();
         // Log
-        logger.info(""+fileSize);
+        logger.info("File size: " + fileSize);
         ThreadClient.setSizeFile(fileSize);
 
         int size = sockets.size();
@@ -95,7 +95,6 @@ public class Server {
     private static class MailBox {
         private byte[] chunk;
         private int count = 0;
-        private boolean can = false;
         private boolean finished = false;
 
         synchronized public boolean getFinished() {
