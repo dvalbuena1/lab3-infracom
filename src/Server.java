@@ -3,17 +3,21 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 public class Server {
     private static int port = 6969;
-    private static Logger logger = Logger.getLogger("MyLogger");
+    private static Logger logger = Logger.getLogger("Server");
     private static int cantClients;
     private static MailBox mb;
     private static Object monitor;
     private static String PATH_FILE;
     private static LinkedList<ThreadClient> sockets = new LinkedList<ThreadClient>();
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         PATH_FILE = args[0];
@@ -24,6 +28,15 @@ public class Server {
         ThreadClient.setMonitor(monitor);
         ThreadClient.setMailBox(mb);
         ServerSocket sv = new ServerSocket(port);
+
+        // Log
+        LogManager.getLogManager().reset();
+        LocalDateTime currantTime = LocalDateTime.now();
+        String parsedTime = DATE_TIME_FORMATTER.format(currantTime);
+        FileHandler fileHandler = new FileHandler(parsedTime+".log");
+        fileHandler.setFormatter(new SimpleFormatter());
+        fileHandler.setLevel(Level.ALL);
+        logger.addHandler(fileHandler);
 
         while (true) {
             Socket sc = sv.accept();
@@ -37,7 +50,11 @@ public class Server {
 
     private static void serveClients() throws IOException, NoSuchAlgorithmException {
         File file = new File(PATH_FILE);
+        // Log
+        logger.info(PATH_FILE);
         int fileSize = (int) file.length();
+        // Log
+        logger.info(""+fileSize);
         ThreadClient.setSizeFile(fileSize);
 
         int size = sockets.size();
@@ -122,7 +139,8 @@ public class Server {
 
         @Override
         public void run() {
-            System.out.println("Start Thread " + id);
+            // Log
+            logger.info("Start Thread " + id);
             OutputStream os = null;
             DataOutputStream dataOs = null;
             try {
@@ -138,6 +156,8 @@ public class Server {
                 synchronized (monitor) {
                     monitor.wait();
                 }
+
+                long start = System.nanoTime();
                 while (!mb.getFinished()) {
                     synchronized (monitor) {
                         os.write(mb.getChunk(), 0, mb.getChunk().length);
@@ -146,11 +166,16 @@ public class Server {
                         monitor.wait();
                     }
                 }
+                long elapsedTime = System.nanoTime() - start;
+                // Log
+                logger.info("Thread " + id + " Elapsed Time " + elapsedTime + " nano");
 
                 os.write(hashFile);
                 os.flush();
-                System.out.println("End Thread " + id);
+                // Log
+                logger.info("Successful File Transfer Thread " + id);
             } catch (IOException | InterruptedException e) {
+                logger.info("Thread " + id + " couldn't finalize properly");
             } finally {
                 try {
                     if (os != null) os.close();
