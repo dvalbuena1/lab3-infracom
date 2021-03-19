@@ -34,10 +34,19 @@ public class Client {
         InputStream sockInput = null;
         DataInputStream dis = null;
 
+        OutputStream sockOutput = null;
+        DataOutputStream dos = null;
+
         try {
             socket = new Socket(serverIP, port);
             sockInput = socket.getInputStream();
             dis = new DataInputStream(sockInput);
+
+            sockOutput = socket.getOutputStream();
+            dos = new DataOutputStream(sockOutput);
+
+            dos.writeUTF("ACK Ready");
+            dos.flush();
 
             int id = dis.readInt();
             long fileSize = dis.readLong();
@@ -62,6 +71,8 @@ public class Client {
             if (sockInput != null) sockInput.close();
             if (dis != null) dis.close();
             if (socket != null) socket.close();
+            if (sockOutput != null) sockOutput.close();
+            if (dos != null) dos.close();
         }
     }
 }

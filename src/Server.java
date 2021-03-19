@@ -27,11 +27,15 @@ public class Server {
 
         while (true) {
             Socket sc = sv.accept();
-            System.out.println("Acepto un cliente");
-            sockets.add(new ThreadClient(sc, sockets.size() + 1));
+            DataInputStream in = new DataInputStream(sc.getInputStream());
+            String confirmation = in.readUTF();
+            if(confirmation.equals("ACK Ready")) {
+                System.out.println("Acepto un cliente");
+                sockets.add(new ThreadClient(sc, sockets.size() + 1));
 
-            if (sockets.size() == cantClients)
-                serveClients();
+                if (sockets.size() == cantClients)
+                    serveClients();
+            }
         }
     }
 
