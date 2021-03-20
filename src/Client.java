@@ -5,11 +5,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.logging.*;
 
 public class Client {
     private static String filePath;
     private static String serverIP;
+    private static String idTest;
     private static int port = 6969;
+
+    private static Logger logger = Logger.getLogger("Client");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
 
     public static boolean checkHash(byte[] hash1, byte[] hash2) {
         return Arrays.equals(hash1, hash2);
@@ -17,16 +22,24 @@ public class Client {
 
     public static byte[] readFileSocket(InputStream sockInput, int id, long fileSize) throws Exception {
         byte[] bytes = new byte[4096];
-        FileOutputStream out = new FileOutputStream(filePath + id + ".txt");
+        FileOutputStream out = new FileOutputStream(filePath + "Cliente" + id + "-Prueba-" + idTest + ".txt");
         BufferedOutputStream buffOut = new BufferedOutputStream(out);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-
+        logger.info("Starting transfer");
         int len;
+        long bytesReceived = 0;
+        long startT = System.currentTimeMillis();
         while (fileSize > 0 && (len = sockInput.read(bytes, 0, bytes.length)) != -1) {
             buffOut.write(bytes, 0, len);
             digest.update(bytes, 0, len);
             fileSize -= len;
+            bytesReceived += len;
         }
+        long finalTime = System.currentTimeMillis() - startT;
+        logger.info("File Transfer complete and hash calculated");
+        logger.info("Total transfer duration: " + finalTime + " millis");
+        logger.info("File Saved in: " + filePath);
+        logger.info("Bytes received: " + bytesReceived);
         buffOut.close();
         return digest.digest();
     }
@@ -34,6 +47,7 @@ public class Client {
     public static void main(String[] args) throws IOException {
         filePath = args[0];
         serverIP = args[1];
+        idTest = args[2];
 
         Socket socket = null;
         InputStream sockInput = null;
@@ -41,6 +55,15 @@ public class Client {
 
         OutputStream sockOutput = null;
         DataOutputStream dos = null;
+
+        // Log
+        LogManager.getLogManager().reset();
+        LocalDateTime currantTime = LocalDateTime.now();
+        String parsedTime = DATE_TIME_FORMATTER.format(currantTime);
+        FileHandler fileHandler = new FileHandler("./Logs/Client/" + parsedTime + "-log.txt");
+        fileHandler.setFormatter(new SimpleFormatter());
+        fileHandler.setLevel(Level.ALL);
+        logger.addHandler(fileHandler);
 
         try {
             socket = new Socket(serverIP, port);
@@ -54,18 +77,26 @@ public class Client {
             dos.flush();
 
             int id = dis.readInt();
+            logger.info("Local File name: " + "Cliente" + id + "-Prueba-" + idTest + ".txt");
             long fileSize = dis.readLong();
+            logger.info("Client ID: " + id);
+
+            logger.info("Size of file that will be transfered: " + fileSize);
             System.out.println(fileSize);
 
             byte[] localHash = readFileSocket(sockInput, id, fileSize);
 
+            logger.info("hash received from server");
             byte[] hash = new byte[32];
             sockInput.read(hash);
             boolean check = checkHash(hash, localHash);
             if (!check) {
                 System.out.println("Archivo Corrupto!!!!! UwU");
-            } else
+                logger.severe("File integrity verification failed");
+            } else {
                 System.out.println("Se logrooooo!!!!! UwU");
+                logger.info("File integrity verification passed");
+            }
 
 
         } catch (Exception e) {

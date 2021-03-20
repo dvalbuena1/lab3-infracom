@@ -19,7 +19,7 @@ public class Server {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
         PATH_FILE = args[0];
         cantClients = Integer.parseInt(args[1]);
         MailBox mb = new MailBox();
@@ -33,7 +33,7 @@ public class Server {
         LogManager.getLogManager().reset();
         LocalDateTime currantTime = LocalDateTime.now();
         String parsedTime = DATE_TIME_FORMATTER.format(currantTime);
-        FileHandler fileHandler = new FileHandler("./Logs/" + parsedTime + ".log");
+        FileHandler fileHandler = new FileHandler("./Logs/Server/" + parsedTime + "-log.txt");
         fileHandler.setFormatter(new SimpleFormatter());
         fileHandler.setLevel(Level.ALL);
         logger.addHandler(fileHandler);
@@ -46,24 +46,28 @@ public class Server {
                 System.out.println("Acepto un cliente");
                 sockets.add(new ThreadClient(sc, sockets.size() + 1));
 
-                if (sockets.size() == cantClients)
+                if (sockets.size() == cantClients) {
                     serveClients();
+                    break;
+                }
             }
         }
+
+        sv.close();
     }
 
-    private static void serveClients() throws IOException, NoSuchAlgorithmException {
+    private static void serveClients() throws IOException, NoSuchAlgorithmException, InterruptedException {
         File file = new File(PATH_FILE);
         // Log
         logger.info("File name: " + file.getName());
         int fileSize = (int) file.length();
         // Log
-        logger.info("File size: " + fileSize);
+        logger.info("File size: " + fileSize + " B");
         ThreadClient.setSizeFile(fileSize);
 
         int size = sockets.size();
         for (int i = 0; i < size; i++)
-            sockets.poll().start();
+            sockets.get(i).start();
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
         byte[] byteFile = new byte[4096];
@@ -89,7 +93,14 @@ public class Server {
             monitor.notifyAll();
         }
 
+        for (int i = 0; i < sockets.size(); i++){
+            sockets.get(i).join();
+        }
+
         bf.close();
+        for(Handler h: logger.getHandlers()){
+            h.close();
+        }
     }
 
     private static class MailBox {
@@ -160,25 +171,32 @@ public class Server {
                     monitor.wait();
                 }
 
-                long start = System.nanoTime();
+                long start = System.currentTimeMillis();
+                int i = 0;
+                int bytes = 0;
                 while (!mb.getFinished()) {
                     synchronized (monitor) {
                         os.write(mb.getChunk(), 0, mb.getChunk().length);
                         os.flush();
+                        i++;
+                        bytes += mb.getChunk().length;
                         mb.addCount();
                         monitor.wait();
                     }
                 }
-                long elapsedTime = System.nanoTime() - start;
+
                 // Log
-                logger.info("Thread " + id + " Elapsed Time " + elapsedTime + " nano");
+                logger.info("Thread " + id + ", Total number of packages sent: " + i + ", With total size: " + bytes + " B");
+                long elapsedTime = System.currentTimeMillis() - start;
+                logger.info("Thread " + id + " Elapsed Time " + elapsedTime + " millis");
 
                 os.write(hashFile);
                 os.flush();
+
                 // Log
                 logger.info("Successful File Transfer Thread " + id);
             } catch (IOException | InterruptedException e) {
-                logger.info("Thread " + id + " couldn't finalize properly");
+                logger.severe("Thread " + id + " couldn't finalize properly");
             } finally {
                 try {
                     if (os != null) os.close();
