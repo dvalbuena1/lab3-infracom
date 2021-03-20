@@ -20,9 +20,9 @@ public class Client {
         return Arrays.equals(hash1, hash2);
     }
 
-    public static byte[] readFileSocket(InputStream sockInput, int id, long fileSize) throws Exception {
+    public static byte[] readFileSocket(InputStream sockInput, int id, long fileSize, String ext) throws Exception {
         byte[] bytes = new byte[1024];
-        FileOutputStream out = new FileOutputStream(filePath + "Cliente" + id + "-Prueba-" + idTest + ".txt");
+        FileOutputStream out = new FileOutputStream(filePath + "Cliente" + id + "-Prueba-" + idTest +  "." + ext);
         BufferedOutputStream buffOut = new BufferedOutputStream(out);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         logger.info("Starting transfer");
@@ -30,11 +30,18 @@ public class Client {
         long bytesReceived = 0;
         long startT = System.currentTimeMillis();
         while (fileSize > 0 && (len = sockInput.read(bytes, 0, bytes.length)) != -1) {
-            buffOut.write(bytes, 0, len);
-            digest.update(bytes, 0, len);
+            if(fileSize - len <= -1){
+                buffOut.write(bytes, 0, (int)fileSize);
+                digest.update(bytes, 0, (int)fileSize);
+            }
+            else {
+                buffOut.write(bytes, 0, len);
+                digest.update(bytes, 0, len);
+            }
             fileSize -= len;
             bytesReceived += len;
         }
+        System.out.println("Got Here");
         long finalTime = System.currentTimeMillis() - startT;
         logger.info("File Transfer complete and hash calculated");
         logger.info("Total transfer duration: " + finalTime + " millis");
@@ -77,7 +84,8 @@ public class Client {
             dos.flush();
 
             int id = dis.readInt();
-            logger.info("Local File name: " + "Cliente" + id + "-Prueba-" + idTest + ".txt");
+            String ext = dis.readUTF();
+            logger.info("Local File name: " + "Cliente" + id + "-Prueba-" + idTest +  "." + ext);
             long fileSize = dis.readLong();
             logger.info("Client ID: " + id);
 
@@ -86,7 +94,7 @@ public class Client {
             logger.info("Size of file that will be transfered: " + fileSize);
             System.out.println(fileSize);
 
-            byte[] localHash = readFileSocket(sockInput, id, fileSize);
+            byte[] localHash = readFileSocket(sockInput, id, fileSize, ext);
 
             logger.info("hash received from server");
             byte[] hash = new byte[32];

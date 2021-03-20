@@ -65,6 +65,12 @@ public class Server {
         logger.info("File size: " + fileSize + " B");
         ThreadClient.setSizeFile(fileSize);
 
+        String extension = "";
+        int index = PATH_FILE.lastIndexOf(".");
+        if(index > 0)
+            extension = PATH_FILE.substring(index+1);
+        ThreadClient.setExtension(extension);
+
         int size = sockets.size();
         for (int i = 0; i < size; i++)
             sockets.get(i).start();
@@ -145,6 +151,7 @@ public class Server {
         private static long sizeFile;
         private final int id;
         private final Socket client;
+        private static String extension;
 
         public ThreadClient(Socket client, int id) {
             this.client = client;
@@ -162,6 +169,9 @@ public class Server {
                 dataOs = new DataOutputStream(os);
 
                 dataOs.writeInt(id);
+                dataOs.flush();
+
+                dataOs.writeUTF(extension);
                 dataOs.flush();
 
                 dataOs.writeLong(sizeFile);
@@ -222,6 +232,10 @@ public class Server {
 
         public static void setSizeFile(int sizeFile) {
             ThreadClient.sizeFile = sizeFile;
+        }
+
+        public static void setExtension(String ext) {
+            ThreadClient.extension = ext;
         }
     }
 }
