@@ -21,7 +21,7 @@ public class Client {
     }
 
     public static byte[] readFileSocket(InputStream sockInput, int id, long fileSize) throws Exception {
-        byte[] bytes = new byte[4096];
+        byte[] bytes = new byte[1024];
         FileOutputStream out = new FileOutputStream(filePath + "Cliente" + id + "-Prueba-" + idTest + ".txt");
         BufferedOutputStream buffOut = new BufferedOutputStream(out);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -80,6 +80,8 @@ public class Client {
             logger.info("Local File name: " + "Cliente" + id + "-Prueba-" + idTest + ".txt");
             long fileSize = dis.readLong();
             logger.info("Client ID: " + id);
+
+            logger.info("Port: " + socket.getLocalPort());
 
             logger.info("Size of file that will be transfered: " + fileSize);
             System.out.println(fileSize);

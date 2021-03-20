@@ -70,7 +70,7 @@ public class Server {
             sockets.get(i).start();
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-        byte[] byteFile = new byte[4096];
+        byte[] byteFile = new byte[1024];
         BufferedInputStream bf = new BufferedInputStream(new FileInputStream(file));
 
         int count;
