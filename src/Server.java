@@ -43,7 +43,7 @@ public class Server {
             DataInputStream in = new DataInputStream(sc.getInputStream());
             String confirmation = in.readUTF();
             if (confirmation.equals("ACK Ready")) {
-                System.out.println("Acepto un cliente");
+                System.out.println("Accept a client");
                 sockets.add(new ThreadClient(sc, sockets.size() + 1));
 
                 if (sockets.size() == cantClients) {
