@@ -43,7 +43,7 @@ public class Server {
             DataInputStream in = new DataInputStream(sc.getInputStream());
             String confirmation = in.readUTF();
             if (confirmation.equals("ACK Ready")) {
-                System.out.println("Accept a client");
+                System.out.println("Accepted client");
                 sockets.add(new ThreadClient(sc, sockets.size() + 1));
 
                 if (sockets.size() == cantClients) {
@@ -57,12 +57,12 @@ public class Server {
     }
 
     private static void updateProgress(double progressPercentage) {
-        final int width = 50; // progress bar width in chars
+        final int width = 1; // progress bar width in chars
 
         System.out.print("\r[");
         int i = 0;
         for (; i <= (int)(progressPercentage*width); i++) {
-          System.out.print(".");
+          System.out.print("=");
         }
         for (; i < width; i++) {
           System.out.print(" ");
@@ -93,11 +93,9 @@ public class Server {
         byte[] byteFile = new byte[1024];
         BufferedInputStream bf = new BufferedInputStream(new FileInputStream(file));
 
+        System.out.println("Loading...");
         updateProgress(0);
-        //System.out.println(fileSize);
-        //System.out.println(byteFile.length);
         double totalProg = 100.0/((double)fileSize/(double)byteFile.length);
-        //System.out.println(totalProg);
         double prog = 0;
         int count;
         while ((count = bf.read(byteFile)) != -1) {
@@ -111,7 +109,6 @@ public class Server {
             }
             mb.setCount();
             prog+=totalProg;
-            //System.out.println(prog);
             updateProgress(prog);
         }
 
@@ -126,6 +123,8 @@ public class Server {
         for (int i = 0; i < sockets.size(); i++){
             sockets.get(i).join();
         }
+
+        System.out.println("Success!!");
 
         bf.close();
         for(Handler h: logger.getHandlers()){

@@ -72,7 +72,7 @@ public class Client {
 
         try {
             socket = new Socket(serverIP, port);
-            System.out.println("Esperando transmision de archivo");
+            System.out.println("Client waiting for response...");
             sockInput = socket.getInputStream();
             dis = new DataInputStream(sockInput);
 
@@ -90,11 +90,11 @@ public class Client {
 
             logger.info("Port: " + socket.getLocalPort());
 
-            logger.info("Size of file that will be transfered: " + fileSize);
+            logger.info("Size of file that will be transferred: " + fileSize);
             System.out.println("File Size: " + fileSize + " B");
-            System.out.println("Empezo la transferencia de archivo");
+            System.out.println("Starting file transfer");
             byte[] localHash = readFileSocket(sockInput, id, fileSize, ext);
-            System.out.println("Transferencia de archivo completa, puede encontrar su archivo en " + filePath);
+            System.out.println("File transfer complete, your file will be inside " + filePath);
             logger.info("hash received from server");
             byte[] hash = new byte[32];
             sockInput.read(hash);
