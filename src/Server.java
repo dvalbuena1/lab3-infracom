@@ -56,6 +56,20 @@ public class Server {
         sv.close();
     }
 
+    private static void updateProgress(double progressPercentage) {
+        final int width = 50; // progress bar width in chars
+
+        System.out.print("\r[");
+        int i = 0;
+        for (; i <= (int)(progressPercentage*width); i++) {
+          System.out.print(".");
+        }
+        for (; i < width; i++) {
+          System.out.print(" ");
+        }
+        System.out.print("]");
+      }
+    
     private static void serveClients() throws IOException, NoSuchAlgorithmException, InterruptedException {
         File file = new File(PATH_FILE);
         // Log
@@ -79,6 +93,12 @@ public class Server {
         byte[] byteFile = new byte[1024];
         BufferedInputStream bf = new BufferedInputStream(new FileInputStream(file));
 
+        updateProgress(0);
+        //System.out.println(fileSize);
+        //System.out.println(byteFile.length);
+        double totalProg = 100.0/((double)fileSize/(double)byteFile.length);
+        //System.out.println(totalProg);
+        double prog = 0;
         int count;
         while ((count = bf.read(byteFile)) != -1) {
             digest.update(byteFile, 0, count);
@@ -90,8 +110,12 @@ public class Server {
                 Thread.yield();
             }
             mb.setCount();
+            prog+=totalProg;
+            //System.out.println(prog);
+            updateProgress(prog);
         }
 
+        updateProgress(100);
         mb.setFinished(true);
         byte[] hashFile = digest.digest();
         ThreadClient.setHashFile(hashFile);
